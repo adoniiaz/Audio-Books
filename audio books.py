@@ -55,3 +55,53 @@ test_targets= shuffled_targets[num_validate + num_train:]
 np.savez('Audiobooks_data_train', inputs=train_inputs, targets= train_target)
 np.savez('Audiobooks_data_validation', inputs=validate_inputs, targets=validate_target)
 np.savez('Audiobooks_data_test', inputs=test_inputs, targets=test_targets)
+
+#LOAD THE PREPROCESSED DATA
+npz_train=np.load('Audiobooks_data_train.npz')
+training_inputs=npz_train['inputs'].astype(np.float32)
+training_targets=npz_train['targets'].astype(np.int32)
+
+
+npz_validate=np.load('Audiobooks_data_validation.npz')
+validation_inputs=npz_validate['inputs'].astype(np.float32)
+validation_targets=npz_validate['targets'].astype(np.int32)
+
+
+npz_test=np.load('Audiobooks_data_validation.npz')
+testing_inputs=npz_test['inputs'].astype(np.float32)
+testing_targets=npz_test['targets'].astype(np.int32)
+
+
+#OUtlining the model
+input_size=10
+hidden_layer=100
+output_size=2
+
+model=tf.keras.Sequential([
+    tf.keras.layers.Dense(hidden_layer, activation='relu'),
+    tf.keras.layers.Dense(hidden_layer, activation='relu'),
+    tf.keras.layers.Dense(output_size, activation='softmax')
+])
+
+#OPTIMIZER AND LOSS
+#CREATE AN EARLY STOPPING MECHANISM BECAUSE OF OVERFITTING NOTICED
+lr_schedule=tf.keras.optimizers.schedules.ExponentialDecay(
+    initial_learning_rate=0.001,
+    decay_steps=100,
+    decay_rate=0.9
+)
+optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+batch_size=100
+early_stopping=tf.keras.callbacks.EarlyStopping(patience=2)
+max_epochs=100
+model.fit(training_inputs, training_targets,
+           batch_size=batch_size, epochs= max_epochs,
+           callbacks=[early_stopping],
+           validation_data=(validation_inputs, validation_targets) ,
+           verbose=2)
+
+#Test the data
+test_loss, test_accuracy=model.evaluate(training_inputs, training_targets)
+print('Test loss: {0:.2f}. Test accuracy: {1:.2f}%'.format(test_loss,test_accuracy*100))
+
