@@ -73,7 +73,7 @@ testing_targets=npz_test['targets'].astype(np.int32)
 
 #OUtlining the model
 input_size=10
-hidden_layer=50
+hidden_layer=100
 output_size=2
 
 model=tf.keras.Sequential([
@@ -83,10 +83,17 @@ model=tf.keras.Sequential([
 ])
 
 #OPTIMIZER AND LOSS
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+#CREATE AN EARLY STOPPING MECHANISM BECAUSE OF OVERFITTING NOTICED
+learning_rate=0.005
+optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate)
+model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 batch_size=100
+early_stopping=tf.keras.callbacks.EarlyStopping(patience=2)
 max_epochs=100
 model.fit(training_inputs, training_targets,
            batch_size=batch_size, epochs= max_epochs,
+           callbacks=[early_stopping],
            validation_data=(validation_inputs, validation_targets) ,
            verbose=2)
+
+
